@@ -64,7 +64,6 @@ def _create_telemetry_request(event, event_type, seq_id):
             "Content-type": "application/json",
             "DD-Telemetry-Request-Type": event_type,
             "DD-Telemetry-API-Version": "v1",
-            "DD-API-KEY": "",
         },
         "body": {
             "tracer_time": int(monotonic()),
@@ -82,7 +81,7 @@ def _create_telemetry_request(event, event_type, seq_id):
 def app_started_telemetry_request():
     # type: () -> TelemetryRequest
     """
-    returns a TelemetryRequest which contains a list of application dependencies and configurations
+    Returns a TelemetryRequest which contains a list of application dependencies and configurations
     """
 
     event = AppStartedEvent(
@@ -95,7 +94,7 @@ def app_started_telemetry_request():
 def app_closed_telemetry_request(seq_id=None):
     # type: (Optional[int]) -> TelemetryRequest
     """
-    returns a TelemetryRequest which notifies the agent that an application instance has terminated
+    Returns a TelemetryRequest which notifies the agent that an application instance has terminated
 
     :param seq_id int: arg is a counter representing the number of requests sent by the writer
     """
@@ -106,7 +105,7 @@ def app_closed_telemetry_request(seq_id=None):
 def app_integrations_changed_telemetry_request(integrations, seq_id=None):
     # type: (List[Integration], Optional[int]) -> TelemetryRequest
     """
-    returns a TelemetryRequest which sends a list of configured integrations to the agent
+    Returns a TelemetryRequest which sends a list of configured integrations to the agent
 
     :param seq_id int: arg is a counter representing the number of requests sent by the writer
     """

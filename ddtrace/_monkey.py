@@ -276,6 +276,5 @@ def _attempt_patch_module(module):
 
             imported_module.patch()  # type: ignore
             _PATCHED_MODULES.add(module)
-
             TelemetryWriter.add_integration(create_integration(module))
             return True

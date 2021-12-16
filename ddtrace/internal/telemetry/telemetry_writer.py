@@ -32,6 +32,10 @@ DEFAULT_TELEMETRY_ENDPOINT_TEST = "https://all-http-intake.logs.datad0g.com/api/
 
 
 class TelemetryWriter(PeriodicService):
+    """
+    Periodic service which sends TelemetryRequest payloads to the agent-proxy [not yet but soon]
+    """
+
     enabled = False
     _instance = None  # type: ClassVar[Optional[TelemetryWriter]]
     _lock = forksafe.Lock()
@@ -52,9 +56,7 @@ class TelemetryWriter(PeriodicService):
         """
         Sends a telemetry request to telemetry intake [this will be switched the agent]
         """
-
         conn = get_connection(self.url)
-
         rb_json = self.encoder.encode(request["body"])
         resp = None
         with StopWatch() as sw:
@@ -71,12 +73,11 @@ class TelemetryWriter(PeriodicService):
                 log.log(log_level, "sent %d in %.5fs to %s. response: %s", len(rb_json), t, self.url, resp.status)
             finally:
                 conn.close()
-
         return resp
 
     def flush_integrations_queue(self):
         # type () -> List[Integration]
-        """returns a list of all integrations queued by classmethods"""
+        """Returns a list of all integrations queued by classmethods"""
         with self._lock:
             integrations = self._integrations_queue
             self._integrations_queue = []
@@ -84,7 +85,7 @@ class TelemetryWriter(PeriodicService):
 
     def flush_requests_queue(self):
         # type () -> List[TelemetryRequest]
-        """returns a list of all integrations queued by classmethods"""
+        """Returns a list of all integrations queued by classmethods"""
         with self._lock:
             requests = self._requests_queue
             self._requests_queue = []

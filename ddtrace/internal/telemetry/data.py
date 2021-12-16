@@ -51,7 +51,7 @@ Host = TypedDict(
 
 def create_integration(name, version="", enabled=True, auto_enabled=True, compatible="", error=""):
     # type: (str, str, bool, bool, str, str) -> Integration
-    """creates an Integration Dict and sets default values"""
+    """Creates an Integration Dict and sets default values"""
     return {
         "name": name,
         "version": version,
@@ -64,13 +64,19 @@ def create_integration(name, version="", enabled=True, auto_enabled=True, compat
 
 def _format_version_info(vi):
     # type: (sys._version_info) -> str
-    """Converts sys.version_info into a string with the format x.x.x"""
+    """
+    Helper function private to this module
+    Converts sys.version_info into a string with the format x.x.x
+    """
     return "%d.%d.%d" % (vi.major, vi.minor, vi.micro)
 
 
 def _get_container_id():
     # type: () -> str
-    """Get ID from docker container"""
+    """
+    Helper function private to this module
+    Get ID from docker container
+    """
     container_info = get_container_info()
     if container_info:
         return container_info.container_id or ""
@@ -79,7 +85,10 @@ def _get_container_id():
 
 def _get_os_version():
     # type: () -> str
-    """returns the os version for applications running on Unix, Mac or Windows 32-bit"""
+    """
+    Helper function private to this module
+    Returns the os version for applications running on Unix, Mac or Windows 32-bit
+    """
     ver, _, _ = platform.mac_ver()
     if ver:
         return ver

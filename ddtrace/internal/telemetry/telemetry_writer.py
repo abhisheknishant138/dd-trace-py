@@ -80,7 +80,7 @@ class TelemetryWriter(PeriodicService):
         with self._lock:
             integrations = self._integrations_queue
             self._integrations_queue = []
-            return integrations
+        return integrations
 
     def flush_requests_queue(self):
         # type () -> List[TelemetryRequest]
@@ -88,14 +88,9 @@ class TelemetryWriter(PeriodicService):
         with self._lock:
             requests = self._requests_queue
             self._requests_queue = []
-            return requests
+        return requests
 
     def periodic(self):
-        # type: () -> None
-        # import pdb
-
-        # pdb.set_trace()
-
         integrations = self.flush_integrations_queue()
         if integrations:
             integrations_request = app_integrations_changed_telemetry_request(integrations)
@@ -127,11 +122,12 @@ class TelemetryWriter(PeriodicService):
          :param TelemetryRequest request: dictionary which stores a formatted telemetry request body and header
         """
         with cls._lock:
-            if cls._instance:
-                request["body"]["seq_id"] = cls.sequence
-                cls.sequence += 1
-                # TO DO: replace list with a dead letter queue
-                cls._instance._requests_queue.append(request)
+            if cls._instance is None:
+                return
+            request["body"]["seq_id"] = cls.sequence
+            cls.sequence += 1
+            # TO DO: replace list with a dead letter queue
+            cls._instance._requests_queue.append(request)
 
     @classmethod
     def add_integration(cls, integration):

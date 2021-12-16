@@ -8,7 +8,6 @@ from typing import Any
 from typing import AnyStr
 from typing import Optional
 from typing import Text
-from typing import Type
 from typing import Union
 
 import six
@@ -125,6 +124,7 @@ if sys.version_info < (3, 8):
 else:
     from typing_extensions import TypedDict
 
+TypedDict = TypedDict
 
 if sys.version_info.major < 3:
     getrandbits = random.SystemRandom().getrandbits

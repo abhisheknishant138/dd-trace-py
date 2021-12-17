@@ -14,9 +14,11 @@ from ..encoding import JSONEncoderV2
 from ..logger import get_logger
 from ..periodic import PeriodicService
 from .data import Integration
+from .data import create_integration
 from .telemetry_request import TelemetryRequest
 from .telemetry_request import app_closed_telemetry_request
 from .telemetry_request import app_integrations_changed_telemetry_request
+from .telemetry_request import app_started_telemetry_request
 
 
 log = get_logger(__name__)
@@ -131,18 +133,17 @@ class TelemetryWriter(PeriodicService):
             cls._instance._requests_queue.append(request)
 
     @classmethod
-    def add_integration(cls, integration):
-        # type: (Integration) -> None
+    def integration_event(cls, integration_name):
+        # type: (str) -> None
         """
-        Generates a Telemetry request with an AppIntegrationsChangedEvent payload
-          - If an integrations changed event exists then it add the integation
-            to the integrations buffers
+        Creates and queues a the name and configurations of a patched module
 
-        :param Integration integration: dictionary which stores the name and configurations of a dd-trace Integration
+        :param str integration_name: name of patched module
         """
         with cls._lock:
             if cls._instance is None:
                 return
+            integration = create_integration(integration_name)
             cls._instance._integrations_queue.append(integration)
 
     @classmethod
@@ -178,3 +179,6 @@ class TelemetryWriter(PeriodicService):
 
             cls._instance = telemetry_writer
             cls.enabled = True
+
+        request = app_started_telemetry_request()
+        cls.add_request(request)

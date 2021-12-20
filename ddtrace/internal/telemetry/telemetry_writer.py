@@ -1,5 +1,6 @@
 import logging
 from typing import ClassVar
+from typing import Dict
 from typing import List
 from typing import Optional
 
@@ -13,7 +14,6 @@ from ..compat import httplib
 from ..encoding import JSONEncoderV2
 from ..logger import get_logger
 from ..periodic import PeriodicService
-from .data import Integration
 from .data import create_integration
 from .telemetry_request import TelemetryRequest
 from .telemetry_request import app_closed_telemetry_request
@@ -51,7 +51,7 @@ class TelemetryWriter(PeriodicService):
         self.url = endpoint  # type: str
         self.encoder = JSONEncoderV2()
         self._requests_queue = []  # type: List[TelemetryRequest]
-        self._integrations_queue = []  # type: List[Integration]
+        self._integrations_queue = []  # type: List[Dict]
 
     def _send_request(self, request):
         # type: (TelemetryRequest) -> httplib.HTTPResponse
@@ -78,7 +78,7 @@ class TelemetryWriter(PeriodicService):
         return resp
 
     def flush_integrations_queue(self):
-        # type () -> List[Integration]
+        # type () -> List[Dict]
         """Returns a list of all integrations queued by classmethods"""
         with self._lock:
             integrations = self._integrations_queue

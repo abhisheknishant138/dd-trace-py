@@ -7,16 +7,10 @@ from ddtrace.internal.compat import TypedDict
 from ...compat import monotonic
 from ..runtime import get_runtime_id
 from .data import APPLICATION
-from .data import Application
 from .data import HOST
-from .data import Host
-from .data import Integration
-from .events import AppClosedEvent
-from .events import AppIntegrationsChangedEvent
-from .events import AppStartedEvent
-from .events import Event
-from .events import get_app_configurations
-from .events import get_app_dependencies
+from .payloads import create_app_closed_payload
+from .payloads import create_app_started_payload
+from .payloads import create_integrations_changed_payload
 
 
 # Contains all the body fields required by v1 of the Telemetry Intake API
@@ -31,9 +25,9 @@ RequestBody = TypedDict(
         # reorder requests on the backend.
         # The value is set in TelemetryWriter.add_request() to ensure seq_id is monotonically increasing
         "seq_id": Optional[int],
-        "application": Application,
-        "host": Host,
-        "payload": Event,
+        "application": Dict,
+        "host": Dict,
+        "payload": Dict,
         "request_type": str,
     },
 )
@@ -49,12 +43,12 @@ TelemetryRequest = TypedDict(
 )
 
 
-def _create_telemetry_request(event, event_type, seq_id):
-    # type: (Event, str, Optional[int]) -> TelemetryRequest
+def _create_telemetry_request(payload, payload_type, seq_id):
+    # type: (Dict, str, Optional[int]) -> TelemetryRequest
     """
     Initializes the required fields for a generic Telemetry Intake Request
 
-    :param Payload payload: The payload object sets fields specific to one of the following event types:
+    :param Payload payload: The payload object sets fields specific to one of the following payload types:
         app-started, app-closed, app-integrations-changed, and generate-metrics
 
     :param seq_id int: arg is a counter representing the number of requests sent by the writer
@@ -62,7 +56,7 @@ def _create_telemetry_request(event, event_type, seq_id):
     return {
         "headers": {
             "Content-type": "application/json",
-            "DD-Telemetry-Request-Type": event_type,
+            "DD-Telemetry-Request-Type": payload_type,
             "DD-Telemetry-API-Version": "v1",
         },
         "body": {
@@ -72,8 +66,8 @@ def _create_telemetry_request(event, event_type, seq_id):
             "seq_id": seq_id,
             "application": APPLICATION,
             "host": HOST,
-            "payload": event,
-            "request_type": event_type,
+            "payload": payload,
+            "request_type": payload_type,
         },
     }
 
@@ -83,12 +77,8 @@ def app_started_telemetry_request():
     """
     Returns a TelemetryRequest which contains a list of application dependencies and configurations
     """
-
-    event = AppStartedEvent(
-        dependencies=get_app_dependencies(),
-        configurations=get_app_configurations(),  # will set configurations in future comits
-    )
-    return _create_telemetry_request(event, "app-started", 0)
+    payload = create_app_started_payload()
+    return _create_telemetry_request(payload, "app-started", 0)
 
 
 def app_closed_telemetry_request(seq_id=None):
@@ -98,16 +88,16 @@ def app_closed_telemetry_request(seq_id=None):
 
     :param seq_id int: arg is a counter representing the number of requests sent by the writer
     """
-    event = AppClosedEvent()
-    return _create_telemetry_request(event, "app-closed", seq_id)
+    payload = create_app_closed_payload()
+    return _create_telemetry_request(payload, "app-closed", seq_id)
 
 
 def app_integrations_changed_telemetry_request(integrations, seq_id=None):
-    # type: (List[Integration], Optional[int]) -> TelemetryRequest
+    # type: (List[Dict], Optional[int]) -> TelemetryRequest
     """
     Returns a TelemetryRequest which sends a list of configured integrations to the agent
 
     :param seq_id int: arg is a counter representing the number of requests sent by the writer
     """
-    event = AppIntegrationsChangedEvent(integrations=integrations)
-    return _create_telemetry_request(event, "app-integrations-changed", seq_id)
+    payload = create_integrations_changed_payload(integrations)
+    return _create_telemetry_request(payload, "app-integrations-changed", seq_id)

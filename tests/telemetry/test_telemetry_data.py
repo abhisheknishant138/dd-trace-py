@@ -7,14 +7,11 @@ import pytest
 from ddtrace.internal.compat import PY3
 from ddtrace.internal.runtime.container import CGroupInfo
 from ddtrace.internal.telemetry.data import APPLICATION
-from ddtrace.internal.telemetry.data import Application
-from ddtrace.internal.telemetry.data import Dependency
 from ddtrace.internal.telemetry.data import HOST
-from ddtrace.internal.telemetry.data import Host
-from ddtrace.internal.telemetry.data import Integration
 from ddtrace.internal.telemetry.data import _format_version_info
 from ddtrace.internal.telemetry.data import _get_container_id
 from ddtrace.internal.telemetry.data import _get_os_version
+from ddtrace.internal.telemetry.data import create_dependency
 from ddtrace.internal.telemetry.data import create_integration
 from ddtrace.internal.telemetry.data import get_hostname
 from ddtrace.internal.telemetry.data import get_version
@@ -24,12 +21,12 @@ def test_create_dependency():
     """tests creating a Dependency dictionary"""
     name = "dependency_name"
     version = "0.0.0"
-    dependency = Dependency(name=name, version=version)
+    dependency = create_dependency(name, version)
 
     assert dependency == {
         "name": name,
         "version": version,
-    }  # type: Dependency
+    }
 
 
 def test_create_integration():
@@ -43,7 +40,7 @@ def test_create_integration():
         "auto_enabled": False,
         "compatible": "no",
         "error": "error",
-    }  # type: Integration
+    }
 
 
 def test_create_integration_with_default_args():
@@ -58,7 +55,7 @@ def test_create_integration_with_default_args():
         "auto_enabled": True,
         "compatible": "",
         "error": "",
-    }  # type: Integration
+    }
 
 
 def test_application():
@@ -77,7 +74,7 @@ def test_application():
         "tracer_version": get_version(),
         "runtime_name": platform.python_implementation(),
         "runtime_version": runtime_v,
-    }  # type: Application
+    }
 
     assert APPLICATION == expected_application
 
@@ -119,7 +116,7 @@ def test_host_fields():
         "kernel_release": platform.release(),
         "kernel_version": platform.version(),
         "container_id": _get_container_id(),
-    }  # type: Host
+    }
 
     assert HOST == expected_host
 

@@ -1,8 +1,8 @@
 import platform
 import sys
+from typing import Dict
 
 from ddtrace.internal.compat import PY3
-from ddtrace.internal.compat import TypedDict
 from ddtrace.internal.runtime.container import get_container_info
 from ddtrace.settings import _config as config
 
@@ -10,47 +10,17 @@ from ...version import get_version
 from ..hostname import get_hostname
 
 
-# Stores the name and versions of python modules
-Dependency = TypedDict("Dependency", {"name": str, "version": str})
-
-# Stores information about modules we attempt to instrument
-Integration = TypedDict(
-    "Integration",
-    {"name": str, "version": str, "enabled": bool, "auto_enabled": bool, "compatible": str, "error": str},
-)
-
-# Stores information to uniquely identify a service
-Application = TypedDict(
-    "Application",
-    {
-        "service_name": str,
-        "service_version": str,
-        "env": str,
-        "language_name": str,
-        "language_version": str,
-        "tracer_version": str,
-        "runtime_name": str,
-        "runtime_version": str,
-    },
-)
-
-# Stores info about the host an application is running on
-Host = TypedDict(
-    "Host",
-    {
-        "os": str,
-        "hostname": str,
-        "os_version": str,
-        "kernel_name": str,
-        "kernel_release": str,
-        "kernel_version": str,
-        "container_id": str,
-    },
-)
+def create_dependency(name, version):
+    # type: (str, str) -> Dict[str, str]
+    """Stores the name and versions of python modules"""
+    return {
+        "name": name,
+        "version": version,
+    }
 
 
 def create_integration(name, version="", enabled=True, auto_enabled=True, compatible="", error=""):
-    # type: (str, str, bool, bool, str, str) -> Integration
+    # type: (str, str, bool, bool, str, str) -> Dict
     """Creates an Integration Dict and sets default values"""
     return {
         "name": name,
@@ -104,8 +74,8 @@ def _get_os_version():
 
 
 def _get_host():
-    # type: () -> Host
-    """creates a Host Dict using the platform module"""
+    # type: () -> Dict[str, str]
+    """Creates a dictionary to store host data using the platform module"""
     return {
         "os": platform.platform(aliased=True, terse=True),
         "hostname": get_hostname(),
@@ -118,8 +88,8 @@ def _get_host():
 
 
 def _get_application():
-    # type: () -> Application
-    """Creates an Application Dictionary using ddtrace configurations and the System-Specific module"""
+    # type: () -> Dict[str, str]
+    """Creates a dictionary to store application data using ddtrace configurations and the System-Specific module"""
     return {
         "service_name": config.service or "unnamed_python_service",
         "service_version": config.version or "",

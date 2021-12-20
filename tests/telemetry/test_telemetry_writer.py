@@ -40,7 +40,7 @@ def test_telemetry_writer_integration_changed():
 
     integration = create_integration("integration-1")
 
-    TelemetryWriter.add_integration(integration)
+    TelemetryWriter.integration_event(integration)
 
     telemetry_writer = TelemetryWriter._instance
     prev_sequence = TelemetryWriter.sequence

@@ -1,3 +1,6 @@
+import enum
+
+
 FILTERS_KEY = "FILTERS"
 SAMPLE_RATE_METRIC_KEY = "_sample_rate"
 SAMPLING_PRIORITY_KEY = "_sampling_priority_v1"
@@ -20,6 +23,9 @@ NUMERIC_TAGS = (ANALYTICS_SAMPLE_RATE_KEY,)
 MANUAL_DROP_KEY = "manual.drop"
 MANUAL_KEEP_KEY = "manual.keep"
 
+# Horizontally propagated tags
+UPSTREAM_SERVICES_KEY = "_dd.p.upstream_services"
+
 LOG_SPAN_KEY = "__datadog_log_span"
 
 ERROR_MSG = "error.msg"  # a string representing the error message
@@ -36,3 +42,15 @@ AUTO_REJECT = 0
 AUTO_KEEP = 1
 # Use this to explicitly inform the backend that a trace should be kept and stored.
 USER_KEEP = 2
+
+
+class SamplingMechanism(enum.Enum):
+    """The mechanism responsible for making a sampling decision."""
+
+    DEFAULT = 0  # RateByServiceSampler used before receiving rates from the agent
+    AGENT = 1  # RateByServiceSampler used rates from the agent
+    REMOTE = 2  # Not currently used
+    USER_RULE = 3  # Manual rule / rate provided in tracer configuration
+    MANUAL = 4  # Manually set via `set_tag(MANUAL_DROP/KEEP_KEY)`
+    APP_SEC = 5  # Not currently used
+    USER_REMOTE = 6  # Not currently used

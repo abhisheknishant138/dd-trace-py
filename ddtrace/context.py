@@ -1,3 +1,4 @@
+import base64
 import threading
 from typing import Any
 from typing import Optional
@@ -6,7 +7,11 @@ from typing import Text
 
 from .constants import ORIGIN_KEY
 from .constants import SAMPLING_PRIORITY_KEY
+from .constants import SamplingMechanism
+from .constants import UPSTREAM_SERVICES_KEY
 from .internal.compat import NumericType
+from .internal.compat import ensure_binary
+from .internal.compat import ensure_text
 from .internal.logger import get_logger
 from .internal.utils.deprecation import deprecated
 
@@ -30,6 +35,7 @@ class Context(object):
         "_lock",
         "_meta",
         "_metrics",
+        "_last_upstream_service_entry",
     ]
 
     def __init__(
@@ -41,9 +47,12 @@ class Context(object):
         meta=None,  # type: Optional[_MetaDictType]
         metrics=None,  # type: Optional[_MetricDictType]
         lock=None,  # type: Optional[threading.RLock]
+        upstream_service_entry=None,  # type: Optional[str]
     ):
         self._meta = meta if meta is not None else {}  # type: _MetaDictType
         self._metrics = metrics if metrics is not None else {}  # type: _MetricDictType
+
+        self._last_upstream_service_entry = upstream_service_entry
 
         self.trace_id = trace_id  # type: Optional[int]
         self.span_id = span_id  # type: Optional[int]
@@ -65,7 +74,12 @@ class Context(object):
         # type: (Span) -> Context
         """Return a shallow copy of the context with the given span."""
         return self.__class__(
-            trace_id=span.trace_id, span_id=span.span_id, meta=self._meta, metrics=self._metrics, lock=self._lock
+            trace_id=span.trace_id,
+            span_id=span.span_id,
+            meta=self._meta,
+            metrics=self._metrics,
+            lock=self._lock,
+            upstream_service_entry=self._last_upstream_service_entry,
         )
 
     def _update_tags(self, span):
@@ -73,6 +87,63 @@ class Context(object):
         with self._lock:
             span.meta.update(self._meta)
             span.metrics.update(self._metrics)
+
+    def _update_upstream_services(
+        self,
+        span,  # type: Span
+        sampling_priority,  # type: int
+        sampling_mechanism,  # type: SamplingMechanism
+        sample_rate=None,  # type: Optional[float]
+    ):
+        # type: (...) -> None
+        """
+        Update the ``_dd.p.upstream_services`` tag associated with this context.
+
+        Calling with the same values multiple times will not change anything.
+
+        Calling multiple times with new values will replace the previous entry with the new one.
+        (We will only have 1 entry in the tag for this context)
+        """
+
+        entry = "|".join(
+            [
+                # base64 encode binary representation of the service name
+                # DEV: remove padding
+                ensure_text(base64.b64encode(ensure_binary(span.service or "unnamed-python-service"))).strip("="),
+                str(sampling_priority),
+                str(sampling_mechanism.value),
+                # Float string rounded to 4 decimal places if set, otherwise an empty string
+                "{:0.4f}".format(sample_rate) if sample_rate is not None else "",
+            ]
+        )
+
+        # If the sampling decision hasn't changed, do not add an entry
+        # For example, if someone does `span.set_tag(MANUAL_KEEP_KEY)` multiple times in one trace
+        if self._last_upstream_service_entry == entry:
+            return
+
+        # Fetch any existing value (extracted from propagation headers, or we have already set ourselves)
+        existing = self._meta.get(UPSTREAM_SERVICES_KEY)
+
+        # We have an existing header value and a previously set upstream service entry by us
+        # DEV: We can have an existing value from another upstream service, it doesn't mean it was set by us
+        if existing and self._last_upstream_service_entry is not None:
+            # Remove the last entry if one exists
+            existing, _, old = existing.rpartition(";")
+            # No `;` found, we only had the one entry / our last entry
+            if not old:
+                self._meta[UPSTREAM_SERVICES_KEY] = entry
+            else:
+                self._meta[UPSTREAM_SERVICES_KEY] = ";".join([existing, entry])
+
+        # Existing upstream value, and none set by us yet
+        elif existing:
+            self._meta[UPSTREAM_SERVICES_KEY] = ";".join([existing, entry])
+        else:
+            self._meta[UPSTREAM_SERVICES_KEY] = entry
+
+        # Keep track of the last entry that we created/added
+        self._last_upstream_service_entry = entry
 
     @property
     def sampling_priority(self):

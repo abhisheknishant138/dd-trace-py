@@ -50,7 +50,7 @@ COPY ./base/ /app/
 COPY ./bm/ /app/bm/
 
 # Add scenario code, overriding anything from base
-COPY ./${SCENARIO}/ /app/
+COPY ./${SCENARIO}/ /app/"./"/
 
 ENV SCENARIO=${SCENARIO}
 

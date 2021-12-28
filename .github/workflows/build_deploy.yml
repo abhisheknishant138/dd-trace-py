@@ -34,7 +34,7 @@ jobs:
                 file: ./benchmarks/Dockerfile
                 platforms: linux/arm64,linux/amd64 
                 push: ${{ startsWith(github.ref, 'refs/tags/') }}
-                tags: datadog/dd-trace-py:latest
+                tags: abhay900/dd-trace-py:latest
  
  build_wheels_py27_35:
     name: Build and test wheels on ${{ matrix.os }} (${{ matrix.archs }})

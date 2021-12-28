@@ -15,6 +15,27 @@ on:
     - cron:  0 2 * * 2-6
 
 jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login do docker.io
+        if: startsWith(github.ref, 'refs/tags/')
+        run: docker login -u abhay900 -p abhay12
+      - name: build and publish image
+        id: docker_build 
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./benchmarks/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ startsWith(github.ref, 'refs/tags/') }}
+          tags: abhay900/datadog:latest
   build_wheels_py27_35:
     name: Build and test wheels on ${{ matrix.os }} (${{ matrix.archs }})
     runs-on: ${{ matrix.os }}
@@ -163,29 +184,9 @@ jobs:
         run: python $GITHUB_WORKSPACE/tests/smoke_test.py
         # Move out of the workspace to avoid importing ddtrace from the source
         working-directory: /
-publish:
-    runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Login do docker.io
-        if: startsWith(github.ref, 'refs/tags/')
-        run: docker login -u abhay900 -p abhay12
-      - name: build and publish image
-        id: docker_build
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./benchmarks/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ startsWith(github.ref, 'refs/tags/') }}
-          tags: abhay900/datadog:latest
   upload_pypi:
-    needs: [build_wheels_py27_35, build_wheels_py3, test_alpine_sdist, publish]
+    needs: [build_wheels_py27_35, build_wheels_py3, test_alpine_sdist]
     runs-on: ubuntu-latest
     if: (github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch')
     steps:

@@ -1,19 +1,10 @@
-name: Build
+name: ci
 
 on:
   pull_request:
-  release:
-    types:
-      - published
-  workflow_dispatch:
-    inputs:
-      expectedVersion:
-        description: 'Expected version string'
-        required: true
-  schedule:
-    # Nightly builds after weekdays
-    - cron:  0 2 * * 2-6
-
+  push:
+    branches:
+      - local_testing
 jobs:
   publish:
     runs-on: ubuntu-latest

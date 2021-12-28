@@ -72,7 +72,6 @@ jobs:
         uses: joerick/cibuildwheel@v1.12.0
         env:
           # configure cibuildwheel to build native archs ('auto'), and some
-          # emulated ones
           CIBW_ARCHS: ${{ matrix.archs }}
           # PyPY is not supported
           # Windows 2.7 wheels no longer can be built https://github.com/DataDog/dd-trace-py/pull/2344

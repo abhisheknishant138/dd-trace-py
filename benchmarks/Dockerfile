@@ -55,4 +55,4 @@ COPY ./${SCENARIO}/ /app/
 ENV SCENARIO=${SCENARIO}
 
 ENTRYPOINT ["/app/entrypoint"]
-CMD ["/app/benchmarks"]
+CMD ["/app/benchmark"]
